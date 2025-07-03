@@ -25,7 +25,6 @@ export interface LeagueState {
   selectedSport: string;
   isLoading: boolean;
   error: string | null;
-  cachedBadges: Map<string, string>;
   uniqueSports: string[];
 }
 
@@ -35,3 +34,10 @@ export interface LeagueContextType extends LeagueState {
   fetchLeagues: () => Promise<void>;
   fetchSeasonBadge: (leagueId: string) => Promise<string | undefined>;
 }
+
+export type Action =
+  | { type: "FETCH_INIT" }
+  | { type: "FETCH_SUCCESS"; payload: { leagues: League[]; sports: string[] } }
+  | { type: "FETCH_FAILURE"; payload: string }
+  | { type: "SET_SEARCH_TERM"; payload: string }
+  | { type: "SET_SELECTED_SPORT"; payload: string };
