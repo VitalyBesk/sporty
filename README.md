@@ -1,6 +1,6 @@
 ##  Getting Started:
 This section outlines the requirements and steps to set up and run the Sports Leagues App locally, as well as how to build and deploy it.
-
+You can view the deployed project live at: https://vitalybesk.github.io/sporty/
 ## Requirements:
 
 `Node.js (LTS version recommended, 20.x)
@@ -10,33 +10,33 @@ This section outlines the requirements and steps to set up and run the Sports Le
 `
 ## Installation:
 
-* Clone the repository
-* Install dependencies:
+1. Clone the repository
+2. Install dependencies:
 
 `npm install`
 
 This command will install all necessary project dependencies listed in package.json. 
-* Running the Project Locally:
+3. Running the Project Locally:
 
 `npm run dev
 `
 
 The application will typically open in your browser.
 
-* Building for Production:
+4. Building for Production:
 
 `npm run build
 `
 
 This command compiles the TypeScript code and bundles the application into the dist/ directory.
 
-* Deployment (to GitHub Pages):
-To deploy the application to GitHub Pages (after configuring homepage in package.json and setting up GitHub Pages in your repository settings):
+5. Deployment (to GitHub Pages):
+To deploy the application to GitHub Pages:
 
 `npm run deploy
 `
 
-This script first runs npm run build and then pushes the dist folder content to the gh-pages branch.
+This script first runs `npm run build` and then pushes the dist folder content to the `gh-pages` branch.
 
 ## Design Decisions:
 
