@@ -42,7 +42,7 @@ This script first runs `npm run build` and then pushes the dist folder content t
 
 1. Responsive UI: `Tailwind CSS` was chosen for its utility-first approach, allowing for rapid development of responsive layouts.
 2. Clear State Management: `React Context API` was implemented for global state management related to leagues, search terms, selected sports, loading states, and errors. 
-3. Caching for Performance: A `Map` was integrated into the `LeagueContext` to cache API responses. This prevents redundant network requests and reducing API calls. 
+3. Caching for Performance: A `Map` is used via `useRef` within the `LeagueProvider` to cache API responses. This prevents redundant network requests and reducing API calls. 
 4. Modular Component Structure: The application is broken down into small, reusable components (e.g., SearchBar, Dropdown, LeagueCard, SeasonBadgeModal). 
 5. JavaScript/TypeScript: The project uses modern `React` and `TypeScript` for type safety. 
 6. Deployment Strategy: `GitHub Pages` was selected for simple site hosting. 

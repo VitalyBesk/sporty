@@ -1,132 +1,129 @@
 import React, {
   createContext,
-  useState,
+  useReducer,
   useEffect,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
-import type { LeagueState, LeagueContextType } from "../types";
-import { fetchAllLeagues, fetchSeasonBadgeApi } from "../api/sportsdb"; // Імпортуємо перейменовану функцію
+import type { Action, LeagueState, LeagueContextType } from "../types";
+import { fetchAllLeagues, fetchSeasonBadgeApi } from "../api/sportsdb";
+
+const initialState: LeagueState = {
+  allLeagues: [],
+  filteredLeagues: [],
+  searchTerm: "",
+  selectedSport: "All Sports",
+  isLoading: true,
+  error: null,
+  uniqueSports: [],
+};
+
+const leagueReducer = (state: LeagueState, action: Action): LeagueState => {
+  switch (action.type) {
+    case "FETCH_INIT":
+      return { ...state, isLoading: true, error: null };
+    case "FETCH_SUCCESS":
+      return {
+        ...state,
+        isLoading: false,
+        allLeagues: action.payload.leagues,
+        uniqueSports: ["All Sports", ...action.payload.sports],
+      };
+    case "FETCH_FAILURE":
+      return { ...state, isLoading: false, error: action.payload };
+    case "SET_SEARCH_TERM":
+      return { ...state, searchTerm: action.payload };
+    case "SET_SELECTED_SPORT":
+      return { ...state, selectedSport: action.payload };
+    default:
+      throw new Error("Unhandled action type");
+  }
+};
 
 const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
 
 export const LeagueProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [state, setState] = useState<LeagueState>({
-    allLeagues: [],
-    filteredLeagues: [],
-    searchTerm: "",
-    selectedSport: "",
-    isLoading: false,
-    error: null,
-    cachedBadges: new Map<string, string>(),
-    uniqueSports: [],
-  });
+  const [state, dispatch] = useReducer(leagueReducer, initialState);
+  const cachedBadgesRef = useRef<Map<string, string>>(new Map());
 
   const fetchLeagues = useCallback(async () => {
-    setState((prevState) => ({ ...prevState, isLoading: true, error: null }));
+    dispatch({ type: "FETCH_INIT" });
     try {
       const data = await fetchAllLeagues();
       const leagues = data.leagues || [];
       const sports = Array.from(new Set(leagues.map((l) => l.strSport))).sort();
-
-      setState((prevState) => ({
-        ...prevState,
-        allLeagues: leagues,
-        filteredLeagues: leagues,
-        uniqueSports: ["All Sports", ...sports],
-        isLoading: false,
-      }));
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setState((prevState) => ({
-          ...prevState,
-          error: err.message,
-          isLoading: false,
-        }));
-      } else if (typeof err === "string") {
-        setState((prevState) => ({
-          ...prevState,
-          error: err,
-          isLoading: false,
-        }));
-      } else {
-        setState((prevState) => ({
-          ...prevState,
-          error: "Unknown error loading leagues.",
-          isLoading: false,
-        }));
-      }
+      dispatch({ type: "FETCH_SUCCESS", payload: { leagues, sports } });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error loading leagues.";
+      dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
     }
   }, []);
-
-  const fetchSeasonBadge = useCallback(
-    async (leagueId: string): Promise<string | undefined> => {
-      if (state.cachedBadges.has(leagueId)) {
-        return state.cachedBadges.get(leagueId);
-      }
-      try {
-        const data = await fetchSeasonBadgeApi(leagueId);
-        const badgeUrl = data.seasons?.[0]?.strBadge;
-        if (badgeUrl) {
-          setState((prevState) => {
-            const newCache = new Map(prevState.cachedBadges);
-            newCache.set(leagueId, badgeUrl);
-            return { ...prevState, cachedBadges: newCache };
-          });
-          return badgeUrl;
-        }
-        return undefined;
-      } catch (err) {
-        console.error("Error fetching badge:", err);
-        return undefined;
-      }
-    },
-    [state.cachedBadges],
-  );
 
   useEffect(() => {
     fetchLeagues();
   }, [fetchLeagues]);
 
-  useEffect(() => {
-    let currentLeagues = state.allLeagues;
-
-    if (state.searchTerm) {
-      currentLeagues = currentLeagues.filter((league) =>
+  const filteredLeagues = useMemo(() => {
+    return state.allLeagues
+      .filter((league) =>
         league.strLeague.toLowerCase().includes(state.searchTerm.toLowerCase()),
+      )
+      .filter(
+        (league) =>
+          state.selectedSport === "All Sports" ||
+          league.strSport === state.selectedSport,
       );
-    }
-
-    if (state.selectedSport && state.selectedSport !== "All Sports") {
-      currentLeagues = currentLeagues.filter(
-        (league) => league.strSport === state.selectedSport,
-      );
-    }
-    setState((prevState) => ({
-      ...prevState,
-      filteredLeagues: currentLeagues,
-    }));
   }, [state.allLeagues, state.searchTerm, state.selectedSport]);
 
+  const fetchSeasonBadge = useCallback(
+    async (leagueId: string): Promise<string | undefined> => {
+      if (cachedBadgesRef.current.has(leagueId)) {
+        return cachedBadgesRef.current.get(leagueId);
+      }
+      try {
+        const data = await fetchSeasonBadgeApi(leagueId);
+        const badgeUrl = data.seasons?.[0]?.strBadge;
+        if (badgeUrl) {
+          cachedBadgesRef.current.set(leagueId, badgeUrl);
+          return badgeUrl;
+        }
+      } catch (err) {
+        console.error(`Error fetching badge for league ${leagueId}:`, err);
+      }
+      return undefined;
+    },
+    [],
+  );
+
   const setSearchTerm = useCallback((term: string) => {
-    setState((prevState) => ({ ...prevState, searchTerm: term }));
+    dispatch({ type: "SET_SEARCH_TERM", payload: term });
   }, []);
 
   const setSelectedSport = useCallback((sport: string) => {
-    setState((prevState) => ({ ...prevState, selectedSport: sport }));
+    dispatch({ type: "SET_SELECTED_SPORT", payload: sport });
   }, []);
 
   const contextValue = useMemo(
     () => ({
       ...state,
+      filteredLeagues,
       setSearchTerm,
       setSelectedSport,
       fetchLeagues,
       fetchSeasonBadge,
     }),
-    [state, setSearchTerm, setSelectedSport, fetchLeagues, fetchSeasonBadge],
+    [
+      state,
+      filteredLeagues,
+      setSearchTerm,
+      setSelectedSport,
+      fetchLeagues,
+      fetchSeasonBadge,
+    ],
   );
 
   return (
