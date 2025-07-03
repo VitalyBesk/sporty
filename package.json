@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://vitalyBesk.github.io/sporty",
+  "homepage": "https://vitalybesk.github.io/sporty",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
