@@ -29,7 +29,6 @@ export const LeagueProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const data = await fetchAllLeagues();
       const leagues = data.leagues || [];
-      // Отримуємо унікальні види спорту для фільтрації
       const sports = Array.from(new Set(leagues.map((l) => l.strSport))).sort();
 
       setState((prevState) => ({
@@ -40,7 +39,6 @@ export const LeagueProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading: false,
       }));
     } catch (err: unknown) {
-      // Виправлено: 'any' на 'unknown'
       if (err instanceof Error) {
         setState((prevState) => ({
           ...prevState,
